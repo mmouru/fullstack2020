@@ -1,13 +1,20 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import noteService from '../services/persons'
+import '../index.css'
 
 const Person = (props) => {
     return (
         <div>
             {props.persons.map((person, i) =>
-        <p key={i}>
+        <div key={i}>
             {props.persons[i].name.toUpperCase().includes(props.filter.toUpperCase()) === true &&
             <>{props.persons[i].name} {props.persons[i].number}</>}
-        </p>
+            <button onClick={() => {
+              if(window.confirm(`Delete ${person.name}`)) {
+                props.delete(person.id)}
+              }
+              }>delete</button>
+        </div>
         )}
         </div>
     )
@@ -41,27 +48,84 @@ const Filter = (props) => {
     )
 }
 
+const Notification = (props) => {
+  if(props.message === null) {
+    return (
+      <></>
+    )
+  }
+  else if(props.message.includes("has already been removed from server")){
+    return (
+      <div className="error">
+        {props.message}
+      </div>
+    )
+  }
+  else {
+    return (
+      <div className="style">
+        {props.message}
+      </div>
+    )
+  }
+}
+
 const App = () => {
-  const [ persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ]) 
+  const [ persons, setPersons] = useState([]) 
   const [ newName, setNewName ] = useState('')
   const [ newNumber, setNewNumber] = useState('')
   const [ filter, setNewFilter] = useState('')
+  const [ message, setMessage] = useState(null)
+
+  useEffect(() => {
+      noteService.getAll().then(person => {
+        setPersons(person)
+      })
+  }, [])
+
 
   const addPerson = (event) => {
       event.preventDefault()
-      if(persons.some(person => person.name === newName)){
-          alert(`${newName} is already added to phonebook`)
-      } else{
       const newPerson = { name: newName, number: newNumber }
-      setPersons(persons.concat(newPerson))
-      setNewName('')
-      setNewNumber('')
+      if(persons.some(person => person.name === newName)){
+        const id = persons.find(person => person.name === newName).id
+        const name = persons.find(person => person.id === id).name
+          if(window.confirm(`${newName} is already added to phonebook,
+          replace the old number with a new one?`)){
+            noteService.update(id, newPerson).then(updatedPerson => {
+              setPersons(persons.map(person => person.id !== id ? person : updatedPerson))
+              setMessage(`Updated ${name}`)
+              setTimeout(() => setMessage(null), 3000)
+            }).catch(error => {
+              setMessage(
+                `Information of ${name} has already been removed from server`
+              )
+              setTimeout(() => {
+                setMessage(null)
+              }, 3000)
+              setPersons(persons.filter(person => person.id !== id))
+            })
+          }
+      } else{
+      noteService.create(newPerson).then(response => {
+        console.log(response)
+        setPersons(persons.concat(response))
+        setNewName('')
+        setNewNumber('')
+        setMessage(`Added ${newPerson.name}`)
+        setTimeout(() => setMessage(null), 3000)
+      })
     }
+  }
+
+  const deletePerson = id => {
+    noteService.remove(id).then(response => {
+      console.log(response)
+      setPersons(persons.filter(person => person.id !== id))
+      const name = persons.find(person => person.id === id).name
+      setMessage(`deleted user ${name}`)
+      setTimeout(() => setMessage(null), 3000)
+    })
   }
   
   const handleNameChange = (event) => {
@@ -78,6 +142,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message}/>
       <Filter handleFilter={handleFilter}/>
       <h2>add a new</h2>
       <PersonForm 
@@ -88,7 +153,7 @@ const App = () => {
         handleNumberChange={handleNumberChange}
       />
       <h2>Numbers</h2>
-      <Person filter={filter} persons={persons}/>
+      <Person filter={filter} persons={persons} delete={deletePerson}/>
     </div>
   )
 
