@@ -1,3 +1,5 @@
+const _ = require('lodash')
+
 const dummy = (blogs) => {
     return 1
   }
@@ -21,13 +23,34 @@ const mostFavorite = blogs => {
 }
 
 const mostBlogs = blogs => {
-    const reducer = (author, line) => {
-        author[line[3]] = author[line[3]] || []
-    }
+    const obj = new Object();
+    _.forEach(blogs, function(blog) {
+        obj[blog.author] = (obj[blog.author] || 0) + 1
+    })
+    const mostBlogsAuthor = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
+    const comparingObject = new Object();
+    comparingObject.author = mostBlogsAuthor
+    comparingObject.blogs = obj[mostBlogsAuthor]
+    return comparingObject
+
+}
+
+const mostLikes = blogs => {
+    const obj = new Object()
+    _.forEach(blogs, function(blog) {
+        obj[blog.author] = (obj[blog.author] || 0) + blog.likes
+    })
+    const mostLikesAuthor = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b)
+    const comparingObject = new Object();
+    comparingObject.author = mostLikesAuthor
+    comparingObject.likes = obj[mostLikesAuthor]
+    return comparingObject
 }
   
   module.exports = {
     dummy,
     totalLikes,
-    mostFavorite
+    mostFavorite,
+    mostBlogs,
+    mostLikes
   }

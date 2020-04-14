@@ -1,4 +1,5 @@
 const listHelper = require('../utils/list_helper')
+const _ = require('lodash')
 
 test('dummy returns one', () => {
   const blogs = []
@@ -45,7 +46,7 @@ describe('total likes', () => {
     })
 })
 
-describe('step3', () => {
+describe('step3, step4, step5', () => {
 
     const blogs = [ 
         { _id: "5a422a851b54a676234d17f7", title: "React patterns", author: "Michael Chan", url: "https://reactpatterns.com/", likes: 7, __v: 0 },
@@ -62,6 +63,22 @@ describe('step3', () => {
         title: "Canonical string reduction",
         author: "Edsger W. Dijkstra",
         likes: 12
+      })
+    })
+
+    test('the most blogs by author', () => {
+      const result = listHelper.mostBlogs(blogs)
+      expect(result).toEqual({
+        author: "Robert C. Martin",
+        blogs : 3
+      })
+    })
+
+    test('the most likes by author', () => {
+      const result = listHelper.mostLikes(blogs)
+      expect(result).toEqual({
+        author: "Edsger W. Dijkstra",
+        likes: 17
       })
     })
 })
