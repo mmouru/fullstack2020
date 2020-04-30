@@ -8,12 +8,12 @@ const Person = (props) => {
             {props.persons.map((person, i) =>
         <div key={i}>
             {props.persons[i].name.toUpperCase().includes(props.filter.toUpperCase()) === true &&
-            <>{props.persons[i].name} {props.persons[i].number}</>}
+            <div>{props.persons[i].name} {props.persons[i].number}
             <button onClick={() => {
               if(window.confirm(`Delete ${person.name}`)) {
                 props.delete(person.id)}
               }
-              }>delete</button>
+              }>delete</button></div>}
         </div>
         )}
         </div>
@@ -51,10 +51,10 @@ const Filter = (props) => {
 const Notification = (props) => {
   if(props.message === null) {
     return (
-      <></>
+      null
     )
   }
-  else if(props.message.includes("has already been removed from server")){
+  else if(props.message.includes("has already been removed from server") || props.message.includes("Person validation failed")){
     return (
       <div className="error">
         {props.message}
@@ -99,7 +99,7 @@ const App = () => {
             }).catch(error => {
               setMessage(
                 `Information of ${name} has already been removed from server`
-              )
+              ) 
               setTimeout(() => {
                 setMessage(null)
               }, 3000)
@@ -108,11 +108,16 @@ const App = () => {
           }
       } else{
       noteService.create(newPerson).then(response => {
-        console.log(response)
         setPersons(persons.concat(response))
         setNewName('')
         setNewNumber('')
         setMessage(`Added ${newPerson.name}`)
+        setTimeout(() => setMessage(null), 3000)
+      })
+      .catch(error => {
+        setNewName('')
+        setNewNumber('')
+        setMessage(error.response.data.error)
         setTimeout(() => setMessage(null), 3000)
       })
     }
@@ -120,7 +125,6 @@ const App = () => {
 
   const deletePerson = id => {
     noteService.remove(id).then(response => {
-      console.log(response)
       setPersons(persons.filter(person => person.id !== id))
       const name = persons.find(person => person.id === id).name
       setMessage(`deleted user ${name}`)
